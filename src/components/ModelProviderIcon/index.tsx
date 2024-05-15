@@ -1,4 +1,21 @@
-import { Azure, Bedrock, Google, Moonshot, Ollama, OpenAI, Zhipu } from '@lobehub/icons';
+import {
+  Anthropic,
+  Azure,
+  Bedrock,
+  DeepSeek,
+  Google,
+  Groq,
+  Minimax,
+  Mistral,
+  Moonshot,
+  Ollama,
+  OpenAI,
+  OpenRouter,
+  Perplexity,
+  Together,
+  ZeroOne,
+  Zhipu,
+} from '@lobehub/icons';
 import { memo } from 'react';
 import { Center } from 'react-layout-kit';
 
@@ -18,6 +35,10 @@ const ModelProviderIcon = memo<ModelProviderIconProps>(({ provider }) => {
       return <Bedrock size={20} />;
     }
 
+    case ModelProvider.DeepSeek: {
+      return <DeepSeek size={20} />;
+    }
+    
     case ModelProvider.Google: {
       return (
         <Center height={20} width={20}>
@@ -44,6 +65,38 @@ const ModelProviderIcon = memo<ModelProviderIconProps>(({ provider }) => {
 
     case ModelProvider.Ollama: {
       return <Ollama size={20} />;
+    }
+
+    case ModelProvider.Perplexity: {
+      return <Perplexity size={20} />;
+    }
+
+    case ModelProvider.Minimax: {
+      return <Minimax size={20} />;
+    }
+
+    case ModelProvider.Mistral: {
+      return <Mistral size={20} />;
+    }
+
+    case ModelProvider.Anthropic: {
+      return <Anthropic size={20} />;
+    }
+
+    case ModelProvider.Groq: {
+      return <Groq size={20} />;
+    }
+
+    case ModelProvider.OpenRouter: {
+      return <OpenRouter size={20} />;
+    }
+
+    case ModelProvider.ZeroOne: {
+      return <ZeroOne size={20} />;
+    }
+
+    case ModelProvider.TogetherAI: {
+      return <Together size={20} />;
     }
 
     default: {

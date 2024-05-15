@@ -4,9 +4,11 @@ import { chainPickEmoji } from '@/chains/pickEmoji';
 import { chainSummaryAgentName } from '@/chains/summaryAgentName';
 import { chainSummaryDescription } from '@/chains/summaryDescription';
 import { chainSummaryTags } from '@/chains/summaryTags';
+import { TraceNameMap, TracePayload, TraceTopicType } from '@/const/trace';
 import { chatService } from '@/services/chat';
 import { LobeAgentConfig } from '@/types/agent';
 import { MetaData } from '@/types/meta';
+import { MessageTextChunk } from '@/utils/fetch';
 import { setNamespace } from '@/utils/storeDebug';
 
 import { SessionLoadingState } from '../store/initialState';
@@ -44,6 +46,7 @@ export interface Action {
   dispatchConfig: (payload: ConfigDispatch) => void;
   dispatchMeta: (payload: MetaDataDispatch) => void;
 
+  getCurrentTracePayload: (data: Partial<TracePayload>) => TracePayload;
   resetAgentConfig: () => void;
 
   resetAgentMeta: () => void;
@@ -68,7 +71,6 @@ const t = setNamespace('AgentSettings');
 
 export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, get) => ({
   ...initialState,
-
   autoPickEmoji: async () => {
     const { config, meta, dispatchMeta } = get();
 
@@ -79,6 +81,7 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
         get().updateLoadingState('avatar', loading);
       },
       params: chainPickEmoji([meta.title, meta.description, systemRole].filter(Boolean).join(',')),
+      trace: get().getCurrentTracePayload({ traceName: TraceNameMap.EmojiPicker }),
     });
 
     if (emoji) {
@@ -106,6 +109,7 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
       },
       onMessageHandle: streamUpdateMetaString('description'),
       params: chainSummaryDescription(systemRole),
+      trace: get().getCurrentTracePayload({ traceName: TraceNameMap.SummaryAgentDescription }),
     });
   },
   autocompleteAgentTags: async () => {
@@ -131,6 +135,7 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
       params: chainSummaryTags(
         [meta.title, meta.description, systemRole].filter(Boolean).join(','),
       ),
+      trace: get().getCurrentTracePayload({ traceName: TraceNameMap.SummaryAgentTags }),
     });
   },
   autocompleteAgentTitle: async () => {
@@ -154,6 +159,7 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
       },
       onMessageHandle: streamUpdateMetaString('title'),
       params: chainSummaryAgentName([meta.description, systemRole].filter(Boolean).join(',')),
+      trace: get().getCurrentTracePayload({ traceName: TraceNameMap.SummaryAgentTitle }),
     });
   },
   autocompleteAllMeta: (replace) => {
@@ -205,7 +211,6 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
       }
     }
   },
-
   dispatchConfig: (payload) => {
     const nextConfig = configReducer(get().config, payload);
 
@@ -220,6 +225,11 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
 
     get().onMetaChange?.(nextValue);
   },
+  getCurrentTracePayload: (data) => ({
+    sessionId: get().id,
+    topicId: TraceTopicType.AgentSettings,
+    ...data,
+  }),
 
   resetAgentConfig: () => {
     get().dispatchConfig({ type: 'reset' });
@@ -237,17 +247,25 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
 
   streamUpdateMetaArray: (key: keyof MetaData) => {
     let value = '';
-    return (text: string) => {
-      value += text;
-      get().dispatchMeta({ type: 'update', value: { [key]: value.split(',') } });
+    return (chunk: MessageTextChunk) => {
+      switch (chunk.type) {
+        case 'text': {
+          value += chunk.text;
+          get().dispatchMeta({ type: 'update', value: { [key]: value.split(',') } });
+        }
+      }
     };
   },
 
   streamUpdateMetaString: (key: keyof MetaData) => {
     let value = '';
-    return (text: string) => {
-      value += text;
-      get().dispatchMeta({ type: 'update', value: { [key]: value } });
+    return (chunk: MessageTextChunk) => {
+      switch (chunk.type) {
+        case 'text': {
+          value += chunk.text;
+          get().dispatchMeta({ type: 'update', value: { [key]: value } });
+        }
+      }
     };
   },
 
